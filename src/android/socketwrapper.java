@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 /**
@@ -59,6 +60,7 @@ public class socketwrapper extends CordovaPlugin {
         try {
             if (socket != null) {
                 if (socket.isConnected()) {
+                    socket.close();
                     socketCallbackContext.success();
                 }
             }
@@ -76,6 +78,8 @@ public class socketwrapper extends CordovaPlugin {
                     if (socket == null) {
                         socket = new Socket(ip, 8080);
                     }
+                    while (!socket.isConnected())
+                        socket.connect(new InetSocketAddress(ip, 8080));
                     if (socket.isConnected()) {
                         final OutputStream os = socket.getOutputStream();
                         os.flush();
