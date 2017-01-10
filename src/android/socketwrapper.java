@@ -1,8 +1,6 @@
 package com.heytz.socketwrapper;
 
 import android.content.Context;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.util.Log;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -10,9 +8,7 @@ import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
@@ -21,10 +17,9 @@ import java.net.Socket;
  */
 public class socketwrapper extends CordovaPlugin {
 
-    private static String TAG = "=====mxsdkwrapper.class====";
-    private CallbackContext easyLinkCallbackContext;
+    private static String TAG = "=====socketwrapper.class====";
+    private CallbackContext socketCallbackContext;
     private Context context;
-    //    private FTC_Service ftcService;
     private String mac;
     private String deviceIP;
     private String uid;
@@ -33,17 +28,11 @@ public class socketwrapper extends CordovaPlugin {
     private String productKey;
     private String deviceLoginID;
     private String devicePassword;
-    //  private String appSecretKey;
-    //  private int easylinkVersion;
     private int activateTimeout;
     private String activatePort;
     private Socket socket = null;
 
 
-    /**
-     * Step 2.1 FTC Call back, process the response from MXChip Model.
-     */
-//    private FTC_Listener ftcListener;//new FTCLisenerExtension(easyLinkCallbackContext);
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
@@ -52,6 +41,7 @@ public class socketwrapper extends CordovaPlugin {
 
     @Override
     public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
+        socketCallbackContext = callbackContext;
         if (action.equals("disconnect")) {
             disconnectSocket();
             return true;
@@ -67,13 +57,13 @@ public class socketwrapper extends CordovaPlugin {
 
     private void disconnectSocket() {
         try {
-             if (socket != null) {
-               if (socket.isConnected()) {
-
-               }
-             }
+            if (socket != null) {
+                if (socket.isConnected()) {
+                    socketCallbackContext.success();
+                }
+            }
         } catch (Exception e) {
-            easyLinkCallbackContext.error("Device activate failed.");
+            socketCallbackContext.error("Device activate failed.");
             Log.e(TAG, e.getMessage());
         }
     }
@@ -90,9 +80,11 @@ public class socketwrapper extends CordovaPlugin {
                         final OutputStream os = socket.getOutputStream();
                         os.flush();
                         byte[] buffer = new byte[message.length() / 2];
-                        buffer = message.getBytes();
-                        buffer[0] = 0x03;
-                        buffer[1] = 0x00;
+                        byte[] bs = message.getBytes();
+                        for (int i = 0; i < (bs.length); i = i + 2) {
+                            int bit = Integer.parseInt(Integer.toString(bs[i] - 48) + Integer.toString(bs[i + 1] - 48));
+                            buffer[i / 2] = new Integer(bit).byteValue();
+                        }
                         os.write(buffer);
                     }
                 } catch (Exception se) {
@@ -100,19 +92,18 @@ public class socketwrapper extends CordovaPlugin {
                 }
             }
         }).start();
+        socketCallbackContext.success();
     }
 
-    private static byte[] readStream(InputStream inStream) throws Exception {
-        int count = 0;
-        while (count == 0) {
-            count = inStream.available();
-            Log.i(TAG, String.valueOf(count));
+    private byte[] str2HexString(String str) {
+        byte[] bs = str.getBytes();
+        byte[] result = new byte[str.length() / 2];
+        for (int i = 0; i < (bs.length); i = i + 2) {
+            int bit = Integer.parseInt(Integer.toString(bs[i] - 48) + Integer.toString(bs[i + 1] - 48));
+            result[i / 2] = new Integer(bit).byteValue();
         }
-        byte[] b = new byte[count];
-        inStream.read(b);
-        return b;
+        return result;
     }
-
 
 
 }
