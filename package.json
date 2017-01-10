@@ -1,0 +1,9 @@
+{
+  "version": "0.0.1",
+  "name": "com.heytz.socketwrapper",
+  "cordova_name": "socketwrapper",
+  "platforms": [
+    "android"
+  ],
+  "engines": []
+}
